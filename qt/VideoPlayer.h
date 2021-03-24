@@ -18,6 +18,7 @@ extern "C"
 class VideoPlayer:public QThread
 {
     Q_OBJECT
+
     enum AVPixelFormat dst_pix_fmt = AV_PIX_FMT_RGB32;
 public:
     VideoPlayer();
@@ -27,7 +28,7 @@ public:
         mStart = false;
     }
 private:
-    int decode_packet(AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame);
+    int decodePacket(AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame);
 
 signals:
     void sigGetOneFrame(QImage img);
@@ -37,11 +38,11 @@ protected:
 
 private:
     volatile bool mStart;
-    AVFormatContext *mpFormatContext;
+    AVFormatContext *mpFormatCtx;
     AVCodec *mpCodec;
     AVCodecParameters *mpCodecParameters;
     struct SwsContext *mSwsCtx;
-    int video_stream_index;
+    int mStreamIndex;
 
 };
 

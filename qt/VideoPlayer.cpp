@@ -6,26 +6,26 @@ VideoPlayer::VideoPlayer()
 }
 
 int VideoPlayer::init(QString filepath){
-    mpFormatContext = avformat_alloc_context();
+    mpFormatCtx = avformat_alloc_context();
     mpCodec = NULL;
     mpCodecParameters = NULL;
-    video_stream_index = -1;
+    mStreamIndex = -1;
     mStart = false;
 
-    if (!mpFormatContext) {
+    if (!mpFormatCtx) {
         qDebug()<<"ERROR could not allocate memory for Format Context";
         goto error;
     }
-    if(avformat_open_input(&mpFormatContext,filepath.toStdString().data(),NULL,NULL)!=0){
+    if(avformat_open_input(&mpFormatCtx,filepath.toStdString().data(),NULL,NULL)!=0){
         qDebug()<<"Error could not open the file";
         goto error;
     }
-    if(avformat_find_stream_info(mpFormatContext,NULL) < 0){
+    if(avformat_find_stream_info(mpFormatCtx,NULL) < 0){
         qDebug()<<"Error could not get the stream info";
         goto error;
     }
-    for(int i=0;i< mpFormatContext->nb_streams;i++){
-        AVCodecParameters *pLocalCodecParameters = mpFormatContext->streams[i]->codecpar;
+    for(int i=0;i< mpFormatCtx->nb_streams;i++){
+        AVCodecParameters *pLocalCodecParameters = mpFormatCtx->streams[i]->codecpar;
         AVCodec *pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
         if (pLocalCodec == NULL) {
             qDebug()<<"ERROR unsupported codec!";
@@ -33,7 +33,7 @@ int VideoPlayer::init(QString filepath){
             continue;
         }
         if(pLocalCodecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
-            video_stream_index = i;
+            mStreamIndex = i;
             mpCodecParameters = pLocalCodecParameters;
             mpCodec = pLocalCodec;
             qDebug("Video Codec: resolution %d x %d", pLocalCodecParameters->width, pLocalCodecParameters->height);
@@ -42,18 +42,18 @@ int VideoPlayer::init(QString filepath){
         }
     }
 
-    if (video_stream_index == -1) {
+    if (mStreamIndex == -1) {
         qDebug("File %s does not contain a video stream!", filepath.toStdString().data());
         goto error;
     }
     return 0;
 error:
-    if(mpFormatContext) avformat_close_input(&mpFormatContext);
+    if(mpFormatCtx) avformat_close_input(&mpFormatCtx);
     return -1;
 }
 
 
-int VideoPlayer::decode_packet(AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame)
+int VideoPlayer::decodePacket(AVPacket *pPacket, AVCodecContext *pCodecContext, AVFrame *pFrame)
 {
     int ret=-1;
     uint8_t *dst_data[4];
@@ -170,13 +170,13 @@ void VideoPlayer::run(){
         goto exit;
     }
 
-    while (mStart&& (av_read_frame(mpFormatContext, pPacket) >= 0))
+    while (mStart&& (av_read_frame(mpFormatCtx, pPacket) >= 0))
     {
         msleep(15); // 30fps
         // if it's the video stream
-        if (pPacket->stream_index == video_stream_index) {
+        if (pPacket->stream_index == mStreamIndex) {
 //            qDebug("AVPacket->pts %" PRId64, pPacket->pts);
-            response = decode_packet(pPacket, pCodecContext, pFrame);
+            response = decodePacket(pPacket, pCodecContext, pFrame);
             if (response < 0)
                 break;
         }
@@ -186,7 +186,7 @@ void VideoPlayer::run(){
     qDebug("releasing all the resources");
 exit:
     if(mSwsCtx) sws_freeContext(mSwsCtx);
-    if(mpFormatContext)avformat_close_input(&mpFormatContext);
+    if(mpFormatCtx)avformat_close_input(&mpFormatCtx);
     if(pPacket)av_packet_free(&pPacket);
     if(pFrame)av_frame_free(&pFrame);
     if(pCodecContext) avcodec_free_context(&pCodecContext);

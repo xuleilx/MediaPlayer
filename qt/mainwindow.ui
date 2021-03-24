@@ -29,7 +29,9 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen_file"/>
+    <addaction name="separator"/>
+    <addaction name="actionPlay_video"/>
+    <addaction name="actionPlay_audio"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -42,9 +44,14 @@
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionOpen_file">
+  <action name="actionPlay_video">
    <property name="text">
-    <string>Open file</string>
+    <string>play_video</string>
+   </property>
+  </action>
+  <action name="actionPlay_audio">
+   <property name="text">
+    <string>play_audio</string>
    </property>
   </action>
  </widget>

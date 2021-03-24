@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,11 +16,15 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     VideoPlayer.cpp \
-    DecLabel.cpp
+    DecLabel.cpp \
+    AudioPlayer.cpp \
+    AudioOutput.cpp
 
 HEADERS  += mainwindow.h \
     VideoPlayer.h \
-    DecLabel.h
+    DecLabel.h \
+    AudioPlayer.h \
+    AudioOutput.h
 
 FORMS    += mainwindow.ui
 
