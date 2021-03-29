@@ -46,6 +46,7 @@ void AudioOutput::processOneFrame(const char *data, int len){
     int nwritten = 0;
     const char *ptr = data;
     mStart = true;
+
     while (mStart && nleft > 0) {
         if ((nwritten = mStreamOut->write(ptr,nleft)) < 0) {
             qDebug("writen error:%d",errno);

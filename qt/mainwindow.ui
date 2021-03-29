@@ -13,9 +13,7 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralWidget">
-   <layout class="QGridLayout" name="gridLayout"/>
-  </widget>
+  <widget class="QWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
@@ -33,7 +31,14 @@
     <addaction name="actionPlay_video"/>
     <addaction name="actionPlay_audio"/>
    </widget>
+   <widget class="QMenu" name="menuScale">
+    <property name="title">
+     <string>Scale</string>
+    </property>
+    <addaction name="actionConvertPixelFormat"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuScale"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -52,6 +57,11 @@
   <action name="actionPlay_audio">
    <property name="text">
     <string>play_audio</string>
+   </property>
+  </action>
+  <action name="actionConvertPixelFormat">
+   <property name="text">
+    <string>convertPixelFormat</string>
    </property>
   </action>
  </widget>

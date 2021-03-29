@@ -6,6 +6,7 @@
 
 QT       += core gui
 QT       += multimedia
+QT       += widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,15 +19,22 @@ SOURCES += main.cpp\
     VideoPlayer.cpp \
     DecLabel.cpp \
     AudioPlayer.cpp \
-    AudioOutput.cpp
+    AudioOutput.cpp \
+    VideoScale.cpp \
+    VideoPage.cpp \
+    ScalePage.cpp
 
 HEADERS  += mainwindow.h \
     VideoPlayer.h \
     DecLabel.h \
     AudioPlayer.h \
-    AudioOutput.h
+    AudioOutput.h \
+    VideoScale.h \
+    VideoPage.h \
+    ScalePage.h
 
-FORMS    += mainwindow.ui
+FORMS    += \
+    mainwindow.ui
 
 INCLUDEPATH += /usr/local/include/
 LIBS += -lavformat -lavcodec -lavutil -lswresample -lswscale -pthread

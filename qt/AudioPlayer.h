@@ -35,8 +35,10 @@ private:
                         uint8_t **converted_data, const int frame_size,
                         SwrContext *resample_context);
     int decode(AVPacket *pPacket);
-    int openCodecCtx();
-    int init_swr();
+
+    int initFormat(QString filepath);
+    int initCodecCtx();
+    int initSwr();
 
 signals:
     void sigGetOneFrame(const char *data, int len);
@@ -57,6 +59,7 @@ private:
     enum AVSampleFormat  mFmt;
     int mSampleRate;
     int mChannels;
+
 };
 
 #endif // AUDIOPLAYER_H

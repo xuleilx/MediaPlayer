@@ -1,7 +1,8 @@
 #include "DecLabel.h"
 #include<QPainter>
+#include <QtDebug>
 
-DecLabel::DecLabel()
+DecLabel::DecLabel():QLabel()
 {
 }
 
@@ -14,6 +15,7 @@ void DecLabel::slotGetOneFrame(QImage img)
 //需要重写paintEvent事件
 void DecLabel::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     QPainter painter(this);
 
     if (mImage.size().width() <= 0) return;

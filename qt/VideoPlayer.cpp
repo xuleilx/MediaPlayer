@@ -170,7 +170,9 @@ void VideoPlayer::run(){
         goto exit;
     }
 
-    while (mStart&& (av_read_frame(mpFormatCtx, pPacket) >= 0))
+    av_opt_show2(mSwsCtx,NULL,AV_OPT_FLAG_VIDEO_PARAM,0);
+
+    while (mStart && (av_read_frame(mpFormatCtx, pPacket) >= 0))
     {
         msleep(15); // 30fps
         // if it's the video stream

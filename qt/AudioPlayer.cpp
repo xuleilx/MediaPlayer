@@ -59,7 +59,7 @@ int AudioPlayer::init_converted_samples(uint8_t ***converted_input_samples,
     return 0;
 }
 
-int AudioPlayer::init_swr()
+int AudioPlayer::initSwr()
 {
     int ret = -1;
     swr_ctx = swr_alloc();
@@ -85,29 +85,37 @@ error:
     return ret;
 }
 
-int AudioPlayer::init(QString filepath){
-    mpFormatCtx = NULL;
-    mStart = false;
-
+int AudioPlayer::initFormat(QString filepath)
+{
     if(avformat_open_input(&mpFormatCtx,filepath.toStdString().data(),NULL,NULL)<0){
         qDebug("Could not open source file %s\n", filepath.toStdString().data());
-        goto error;
+        return -1;
     }
 
     if(avformat_find_stream_info(mpFormatCtx,NULL)<0){
         qDebug("Could not find stream information\n");
-        goto error;
+        return -1;
     }
+    return 0;
+}
 
-    if (openCodecCtx()!=0){
-        qDebug("Open codec context failed!\n");
+int AudioPlayer::init(QString filepath){
+    mpFormatCtx = NULL;
+    mStart = false;
+
+    // AVFormat
+    if(initFormat(filepath)!=0)
         goto error;
-    }
 
     av_dump_format(mpFormatCtx,0,filepath.toStdString().data(),0);
 
+    // AVCodec
+    if (initCodecCtx()!=0)
+        goto error;
+
+    // swresample
     /* create resampler context */
-    if(init_swr()<0){
+    if(initSwr()<0){
         qDebug("Could not init swr\n");
         goto error;
     }
@@ -198,6 +206,8 @@ int AudioPlayer::decode(AVPacket *pPacket){
         // end convert
         dst_bufsize = av_samples_get_buffer_size(&dst_linesize, mChannels,
                                                  pFrame->nb_samples, mFmt, 0);
+
+        // play data
         mAudioOutput->processOneFrame((const char *)dst_data[0], dst_bufsize);
 
         av_frame_unref(pFrame);
@@ -207,7 +217,7 @@ exit:
     return response;
 }
 
-int AudioPlayer::openCodecCtx(){
+int AudioPlayer::initCodecCtx(){
     AVStream *st;
     AVCodec *dec;
     int ret;
@@ -247,6 +257,8 @@ int AudioPlayer::openCodecCtx(){
 void AudioPlayer::run(){
     AVPacket *pPacket = NULL;
     int response = 0;
+
+    if(!mpFormatCtx || !mpCodecCtx) goto exit;
 
     mStart = true;
     pPacket = av_packet_alloc();
