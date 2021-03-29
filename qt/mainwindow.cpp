@@ -32,22 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(mVideoPlayer,SIGNAL(sigGetOneFrame(QImage)),mpVideoPage,SLOT(slotGetOneFrame(QImage)));
 
     ui->setupUi(this);
-    centralWidget()->setLayout(mpStackedLayout);
-}
-void MainWindow::switchPage()
-{
-    qDebug()<<"Cliecked";
-    int nCount = mpStackedLayout->count();
-    int nIndex = mpStackedLayout->currentIndex();
-
-    // 获取下一个需要显示的页面索引
-    ++nIndex;
-
-    // 当需要显示的页面索引大于等于总页面时，切换至首页
-    if (nIndex >= nCount)
-        nIndex = 0;
-
-    mpStackedLayout->setCurrentIndex(nIndex);
+    ui->centralWidget->setLayout(mpStackedLayout);// must set after setupUi()
 }
 
 MainWindow::~MainWindow()
@@ -66,12 +51,12 @@ void MainWindow::on_actionPlay_video_triggered()
 
     qDebug()<<"Layout Count: "<< mpStackedLayout->count()
            <<" current: "<< mpStackedLayout->currentIndex();
-
-    mpStackedLayout->setCurrentIndex(0);
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
                                                     "/home/xuleilx/mywork/video",
                                                     tr("Media (*)"));
     if(mVideoPlayer->init(fileName) == 0){
+        resize(800,480);
+        mpStackedLayout->setCurrentIndex(0);
         mVideoPlayer->start();
     }
 }
@@ -89,8 +74,11 @@ void MainWindow::on_actionPlay_audio_triggered()
 
 void MainWindow::on_actionConvertPixelFormat_triggered()
 {
+    mVideoPlayer->stop();
+    mAudioPlayer->stop();
     qDebug()<<"Layout Count: "<< mpStackedLayout->count()
            <<" current: "<< mpStackedLayout->currentIndex();
 
+    resize(600,240);
     mpStackedLayout->setCurrentIndex(1);
 }

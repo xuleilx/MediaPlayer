@@ -33,8 +33,6 @@ private slots:
 
     void on_actionConvertPixelFormat_triggered();
 
-    void switchPage();
-
 private:
     Ui::MainWindow *ui;
     QStackedLayout *mpStackedLayout;
