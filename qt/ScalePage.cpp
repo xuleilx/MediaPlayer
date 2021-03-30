@@ -1,5 +1,6 @@
 #include "ScalePage.h"
 #include <QFileDialog>
+#include <QThread>
 extern "C"
 {
 #include "libavcodec/avcodec.h"
@@ -9,14 +10,15 @@ extern "C"
 #include "libavutil/imgutils.h"
 #include "libavutil/parseutils.h"
 }
+#include "VideoScale.h"
 
 ScalePage::ScalePage()
 {
     mLayout = new QGridLayout(this);
 
-    QLabel *pFileLabel = new QLabel("文件: ");
+    QLabel *pFileLabel = new QLabel("输入文件: ");
     mpFileText = new QLineEdit();
-    QPushButton *pFileBtn = new QPushButton("文件");
+    QPushButton *pFileBtn = new QPushButton("打开");
     mLayout->addWidget(pFileLabel,0,0);
     mLayout->addWidget(mpFileText,0,1);
     mLayout->addWidget(pFileBtn,0,2);
@@ -51,17 +53,19 @@ ScalePage::ScalePage()
     mLayout->addWidget(pPixFmt,3,0);
     mLayout->addWidget(mpPixFmtCmbBox,3,1);
 
-    QLabel *pFileLabelOut = new QLabel("输出文件路径: ");
+    QLabel *pFileLabelOut = new QLabel("输出文件: ");
     mpFileTextOut = new QLineEdit();
-    QPushButton *pFileOutBtn = new QPushButton("文件");
+    QPushButton *pFileOutBtn = new QPushButton("打开");
     mLayout->addWidget(pFileLabelOut,4,0);
     mLayout->addWidget(mpFileTextOut,4,1);
     mLayout->addWidget(pFileOutBtn,4,2);
     connect(pFileOutBtn, &QPushButton::clicked, this, &ScalePage::outputFile);
 
-    QPushButton *pRunBtn = new QPushButton("执行");
-    mLayout->addWidget(pRunBtn,5,3);
+    pRunBtn = new QPushButton("Start");
+    mLayout->addWidget(pRunBtn,5,2);
     connect(pRunBtn, &QPushButton::clicked, this, &ScalePage::run);
+
+    mpVideoScale = new VideoScale;
 }
 void ScalePage::inputFile(){
     QString inputFileName = QFileDialog::getOpenFileName(this, tr("Open File"),
@@ -79,8 +83,22 @@ void ScalePage::outputFile(){
 
 void ScalePage::run(){
     qDebug()<<mpFileText->text();
-    qDebug()<<mpWidthText->text();
-    qDebug()<<mpHeightText->text();
-    qDebug()<<mpPixFmtCmbBox->currentText();
+    qDebug()<<mpWidthText->text().toInt();
+    qDebug()<<mpHeightText->text().toInt();
+    qDebug()<<mpPixFmtCmbBox->currentData().toInt();
     qDebug()<<mpFileTextOut->text();
+    if(mpFileText->text().isEmpty()||mpFileTextOut->text().isEmpty()) return;
+
+    if(!pRunBtn->text().compare("Start")){
+        pRunBtn->setText("Stop");
+        mpVideoScale->init(mpFileText->text(),mpFileTextOut->text());
+        mpVideoScale->setScale(mpWidthText->text().toInt(),
+                               mpHeightText->text().toInt(),
+                               (enum AVPixelFormat)mpPixFmtCmbBox->currentData().toInt());
+        mpVideoScale->doScale();
+    }else{
+        pRunBtn->setText("Start");
+        mpVideoScale->stop();
+    }
+
 }

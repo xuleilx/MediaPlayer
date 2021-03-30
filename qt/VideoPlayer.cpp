@@ -58,7 +58,7 @@ int VideoPlayer::decodePacket(AVPacket *pPacket, AVCodecContext *pCodecContext, 
     int ret=-1;
     uint8_t *dst_data[4];
     int  dst_linesize[4];
-    int dst_bufsize;
+
     // Supply raw packet data as input to a decoder
     // https://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga58bc4bf1e0ac59e27362597e467efff3
     int response = avcodec_send_packet(pCodecContext, pPacket);
@@ -105,7 +105,6 @@ int VideoPlayer::decodePacket(AVPacket *pPacket, AVCodecContext *pCodecContext, 
                 fprintf(stderr, "Could not allocate destination image\n");
                 break;
             }
-            dst_bufsize = ret;
 
             /* convert to destination format */
             sws_scale(mSwsCtx, pFrame->data,
