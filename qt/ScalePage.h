@@ -21,6 +21,7 @@ public slots:
     void inputFile();
     void outputFile();
     void run();
+    void reset();
 
 private:
     QGridLayout *mLayout;

@@ -13,18 +13,28 @@ extern "C"
 #include "libavutil/parseutils.h"
 }
 
-
-class VideoScale
+class VideoScale:public QObject
 {
+    Q_OBJECT
+
 public:
     VideoScale();
-    int init(QString inFile,QString outFile);
+    ~VideoScale();
+    int setup(QString inFile,QString outFile);
     int setScale(int width,int height,enum AVPixelFormat format);
     int doScale();
+    int tearDown();
     inline void stop()
     {
         mStart = false;
     }
+    inline int getWidth(){
+        return mWidth;
+    }
+    inline int getHeight(){
+        return mHeight;
+    }
+
 private:
     int openInputFile(QString inFile);
     int openOutputFile(QString outFile);

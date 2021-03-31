@@ -5,19 +5,31 @@
 VideoScale::VideoScale()
 {
     mpOutFile = new QFile;
+    mpInputFormatContext = NULL;
+    mpInputCodecContext = NULL;
+    mpSwsCtx = NULL;
 }
 
-int VideoScale::init(QString inFile,QString outFile){
+VideoScale::~VideoScale(){
+    tearDown();
+}
+int VideoScale::setup(QString inFile,QString outFile){
     int ret;
     /* Open the input file for reading. */
-    if ((ret = openInputFile(inFile) < 0))
+    if ((ret = openInputFile(inFile)) < 0)
         goto end;
     /* Open the output file for writing. */
     if ((ret = openOutputFile(outFile)) < 0)
         goto end;
-end:
     return 0;
+end:
+    return ret;
+}
 
+int VideoScale::tearDown(){
+    if(mpSwsCtx) sws_freeContext(mpSwsCtx);
+    if(mpInputFormatContext)avformat_close_input(&mpInputFormatContext);
+    if(mpInputCodecContext) avcodec_free_context(&mpInputCodecContext);
 }
 
 void VideoScale::setDstParam(int dst_w, int dst_h, enum AVPixelFormat dst_pix_fmt)
@@ -44,25 +56,25 @@ int VideoScale::setScale(int dst_w,int dst_h,enum AVPixelFormat dst_pix_fmt){
     }
 
     mpSwsCtx = sws_getContext(src_w, src_h, src_pix_fmt,
-                              mWidth, mHeight, dst_pix_fmt,
+                              mWidth, mHeight, mFormat,
                               SWS_BILINEAR, NULL, NULL, NULL);
     if (!mpSwsCtx) {
         fprintf(stderr,
                 "Impossible to create scale context for the conversion "
                 "fmt:%s s:%dx%d -> fmt:%s s:%dx%d\n",
                 av_get_pix_fmt_name(src_pix_fmt), src_w, src_h,
-                av_get_pix_fmt_name(dst_pix_fmt), mWidth, mHeight);
+                av_get_pix_fmt_name(mFormat), mWidth, mHeight);
         ret = AVERROR(EINVAL);
         goto end;
     }
 
     /* buffer is going to be written to rawvideo file, no alignment */
     if ((ret = av_image_alloc(dst_data, dst_linesize,
-                              mWidth, mHeight, dst_pix_fmt, 1)) < 0) {
+                              mWidth, mHeight, mFormat, 1)) < 0) {
         fprintf(stderr, "Could not allocate destination image\n");
         goto end;
     }
-
+    return 0;
 end:
     return ret;
 }
@@ -71,7 +83,7 @@ int VideoScale::doScale(){
     AVFrame *pFrame =NULL;
     AVPacket *pPacket=NULL;
     int response = 0;
-    static int count = 0;
+    int count = 0;
     mStart = true;
 
     pFrame = av_frame_alloc();
@@ -115,6 +127,8 @@ int VideoScale::doScale(){
         count++;
         if(count >=100) break;
     }
+    if(pPacket)av_packet_free(&pPacket);
+    if(pFrame)av_frame_free(&pFrame);
     return 0;
 exit:
     if(mpSwsCtx) sws_freeContext(mpSwsCtx);
@@ -125,6 +139,7 @@ exit:
 }
 
 int VideoScale::openOutputFile(QString outFile){
+    if(mpOutFile->isOpen()) mpOutFile->close();
     mpOutFile->setFileName(outFile);
     if (!mpOutFile->open(QIODevice::WriteOnly))
         return -1;
@@ -140,31 +155,28 @@ int VideoScale::openInputFile(QString inFile)
     AVCodec *dec = NULL;
     AVStream *st;
     AVDictionary *opts = NULL;
-    int error;
     int ret;
     enum AVMediaType type = AVMEDIA_TYPE_VIDEO;
 
     mpInputFormatContext = avformat_alloc_context();
     /* Open the input file to read from it. */
-    if ((error = avformat_open_input(&mpInputFormatContext, inFile.toStdString().data(), NULL,
+    if ((ret = avformat_open_input(&mpInputFormatContext, inFile.toStdString().data(), NULL,
                                      NULL)) < 0) {
-        qDebug()<<"Could not open input file "<< inFile;
-        mpInputFormatContext = NULL;
-        return error;
+        qDebug()<<"Could not open input file "<< inFile<<" error: "<<ret;
+        goto error;
     }
 
     /* Get information on the input file (number of streams etc.). */
-    if ((error = avformat_find_stream_info(mpInputFormatContext, NULL)) < 0) {
+    if ((ret = avformat_find_stream_info(mpInputFormatContext, NULL)) < 0) {
         qDebug()<<"Could not open find stream info ";
-        avformat_close_input(&mpInputFormatContext);
-        return error;
+        goto error;
     }
 
     ret = av_find_best_stream(mpInputFormatContext, type, -1, -1, NULL, 0);
     if (ret < 0) {
         fprintf(stderr, "Could not find %s stream in input file '%s'\n",
                 av_get_media_type_string(type), inFile.toStdString().data());
-        return ret;
+        goto error;
     } else {
         mStreamIndex = ret;
         st = mpInputFormatContext->streams[mStreamIndex];
@@ -174,7 +186,8 @@ int VideoScale::openInputFile(QString inFile)
         if (!dec) {
             fprintf(stderr, "Failed to find %s codec\n",
                     av_get_media_type_string(type));
-            return AVERROR(EINVAL);
+            ret = AVERROR(EINVAL);
+            goto error;
         }
 
         /* Allocate a codec context for the decoder */
@@ -182,25 +195,30 @@ int VideoScale::openInputFile(QString inFile)
         if (!mpInputCodecContext) {
             fprintf(stderr, "Failed to allocate the %s codec context\n",
                     av_get_media_type_string(type));
-            return AVERROR(ENOMEM);
+            ret = AVERROR(ENOMEM);
+            goto error;
         }
 
         /* Copy codec parameters from input stream to output codec context */
         if ((ret = avcodec_parameters_to_context(mpInputCodecContext, st->codecpar)) < 0) {
             fprintf(stderr, "Failed to copy %s codec parameters to decoder context\n",
                     av_get_media_type_string(type));
-            return ret;
+            goto error;
         }
 
         /* Init the decoders */
         if ((ret = avcodec_open2(mpInputCodecContext, dec, &opts)) < 0) {
             fprintf(stderr, "Failed to open %s codec\n",
                     av_get_media_type_string(type));
-            return ret;
+            goto error;
         }
     }
 
     return 0;
+error:
+    if(mpInputFormatContext) avformat_close_input(&mpInputFormatContext);
+    if(mpInputCodecContext) avcodec_free_context(&mpInputCodecContext);
+    return ret;
 }
 
 int VideoScale::decodePacket(AVPacket *pPacket,AVFrame *pFrame)
@@ -240,7 +258,8 @@ int VideoScale::decodePacket(AVPacket *pPacket,AVFrame *pFrame)
             /* convert to destination format */
             sws_scale(mpSwsCtx, pFrame->data,
                       pFrame->linesize, 0, pFrame->height, dst_data, dst_linesize);
-            QDataStream out(mpOutFile);   // we will serialize the data into the file
+            /* write raw data to the file */
+            QDataStream out(mpOutFile);
             out.writeRawData((const char *)dst_data[0],dst_bufsize);
         }
     }
