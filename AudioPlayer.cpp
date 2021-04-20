@@ -186,6 +186,13 @@ int AudioPlayer::decode(AVPacket *pPacket){
             qDebug("Error while receiving a frame from the decoder");
             return response;
         }
+        qDebug("Frame %d (size=%d bytes, format=%d) pts %d [DTS %d]",
+               mpCodecCtx->frame_number,
+               pFrame->pkt_size,
+               pFrame->format,
+               pFrame->pts,
+               pFrame->pkt_dts);
+
         data_size = av_get_bytes_per_sample(mpCodecCtx->sample_fmt);
         if (data_size < 0) {
             /* This should not occur, checking just for paranoia */

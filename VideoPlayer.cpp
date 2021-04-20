@@ -114,6 +114,8 @@ int VideoPlayer::decodePacket(AVPacket *pPacket, AVCodecContext *pCodecContext, 
             //            emit sigGetOneFrame(imageP);
             QImage image(dst_data[0],pCodecContext->width, pCodecContext->height,QImage::Format_RGB32);
             emit sigGetOneFrame(image);  //发送信号，将次imamge发送到要显示的控件，用paintEvent绘制出来
+
+//            msleep(pFrame->pts);
         }
     }
     av_freep(&dst_data[0]);
@@ -173,10 +175,10 @@ void VideoPlayer::run(){
 
     while (mStart && (av_read_frame(mpFormatCtx, pPacket) >= 0))
     {
-        msleep(15); // 30fps
         // if it's the video stream
         if (pPacket->stream_index == mStreamIndex) {
 //            qDebug("AVPacket->pts %" PRId64, pPacket->pts);
+            qDebug()<<"avg_frame_rate: " << mpFormatCtx->streams[mStreamIndex]->avg_frame_rate.den <<" "<<mpFormatCtx->streams[mStreamIndex]->avg_frame_rate.num;
             response = decodePacket(pPacket, pCodecContext, pFrame);
             if (response < 0)
                 break;

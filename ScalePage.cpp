@@ -14,7 +14,7 @@ extern "C"
 
 ScalePage::ScalePage()
 {
-    mLayout = new QGridLayout(this);
+    mLayout = new QGridLayout();
 
     QLabel *pFileLabel = new QLabel("输入文件: ");
     mpFileText = new QLineEdit();
@@ -67,6 +67,8 @@ ScalePage::ScalePage()
     QPushButton *pReset = new QPushButton("Reset");
     mLayout->addWidget(pReset,6,2);
     connect(pReset, &QPushButton::clicked, this, &ScalePage::reset);
+
+    setLayout(mLayout);
 
     mpVideoScale = new VideoScale;
 }

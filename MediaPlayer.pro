@@ -37,4 +37,4 @@ FORMS    += \
     mainwindow.ui
 
 INCLUDEPATH += /usr/local/include/
-LIBS += -lavformat -lavcodec -lavutil -lswresample -lswscale -pthread
+LIBS += -L/usr/local/lib/ -lavformat -lavcodec -lavutil -lswresample -lswscale -pthread
